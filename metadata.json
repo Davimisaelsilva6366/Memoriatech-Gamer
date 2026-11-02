@@ -1,0 +1,6 @@
+{
+  "name": "Memóriatech Gamer",
+  "description": "Aplicativo Android futurista de monitoramento de hardware, diagnóstico e otimização gamer.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
