@@ -49,7 +49,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const [ramOptimizedSuccess, setRamOptimizedSuccess] = useState(false);
 
   const ramHealth = calculateMemoryHealth(hardware.ramUsagePct);
-  const thermalState = classifyThermalState(hardware.cpuTempC);
+  const thermalState = classifyThermalState(0);
 
   // Format uptime HH:MM:SS
   const hours = Math.floor(uptimeSeconds / 3600);
@@ -80,7 +80,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399] animate-pulse" />
               <span className="text-xs uppercase font-['Rajdhani'] font-bold tracking-widest text-emerald-400">
-                SISTEMA OPERACIONAL ESTÁVEL
+                SESSÃO DO APLICATIVO ATIVA
               </span>
             </div>
             <h2 className="text-lg font-['Orbitron'] font-bold text-white mt-0.5">
@@ -94,7 +94,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           {/* Device Uptime Chip */}
           <div className="flex items-center gap-2 bg-slate-950/80 px-3 py-1.5 rounded-xl border border-slate-800 text-xs font-mono text-cyan-400">
             <Clock size={14} className="text-cyan-400 animate-spin" style={{ animationDuration: '10s' }} />
-            <span>UPTIME: {uptimeString}</span>
+            <span>SESSÃO: {uptimeString}</span>
           </div>
         </div>
       </div>
@@ -130,8 +130,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           />
 
           <div className="w-full mt-2 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[10px] text-slate-400">
-            <span>Usada: {(hardware.usedRamMb / 1024).toFixed(1)}GB</span>
-            <span>Total: {(hardware.totalRamMb / 1024).toFixed(0)}GB</span>
+            <span>Em uso: não disponível</span>
+            <span>Estimativa: {hardware.totalRamMb ? `${(hardware.totalRamMb / 1024).toFixed(0)} GB` : 'N/D'}</span>
           </div>
         </div>
 
@@ -142,7 +142,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <Cpu size={13} className="text-cyan-400" />
               PROCESSADOR
             </span>
-            <span className="text-[10px] text-slate-500 font-mono">{hardware.coreCount} NÚCLEOS</span>
+            <span className="text-[10px] text-slate-500 font-mono">{hardware.coreCount || 'N/D'} THREADS</span>
           </div>
 
           <CircularGauge
@@ -155,8 +155,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           />
 
           <div className="w-full mt-2 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[10px] text-slate-400">
-            <span>Freq: {hardware.cpuFrequencyGhz} GHz</span>
-            <span className="text-emerald-400">Normal</span>
+            <span>Frequência: N/D</span>
+            <span className="text-emerald-400">Não medida</span>
           </div>
         </div>
 
@@ -200,25 +200,25 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 color: thermalState.color,
               }}
             >
-              {thermalState.status}
+              {hardware.cpuTempC > 0 ? thermalState.status : 'N/D'}
             </span>
           </div>
 
           <CircularGauge
-            value={Math.min(100, (hardware.cpuTempC / 75) * 100)}
-            displayValue={hardware.cpuTempC.toFixed(1)}
+            value={0}
+            displayValue={'N/D'}
             size={110}
             strokeWidth={8}
             color={thermalState.color}
             glowColor={thermalState.color}
             title="TEMPERATURA"
-            unit="°C"
+            unit=""
             warning={thermalState.alert}
           />
 
           <div className="w-full mt-2 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[10px] text-slate-400">
-            <span>Bateria: {hardware.batteryTempC.toFixed(1)}°C</span>
-            <span className="text-slate-500">SoC: {hardware.socTempC}°C</span>
+            <span>Bateria: N/D</span>
+            <span className="text-slate-500">SoC: N/D</span>
           </div>
         </div>
       </div>
@@ -227,7 +227,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
         <button
           onClick={handleQuickOptimize}
-          disabled={hardware.isRamOptimizing}
+          disabled
           aria-label="Otimizar Memória RAM agora"
           className="relative overflow-hidden p-3 rounded-xl bg-gradient-to-br from-cyan-950/40 via-slate-900 to-slate-950 border border-cyan-500/30 hover:border-cyan-400 text-left transition-all active:scale-95 group shadow-md"
         >
@@ -235,13 +235,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div className="p-2 rounded-lg bg-cyan-500/10 text-cyan-400 group-hover:scale-110 transition-transform">
               <Zap size={18} />
             </div>
-            {ramOptimizedSuccess && <CheckCircle2 size={16} className="text-emerald-400 animate-bounce" />}
+            
           </div>
           <div className="font-['Orbitron'] font-bold text-xs text-white">
-            {hardware.isRamOptimizing ? 'OTIMIZANDO...' : 'OTIMIZAR RAM'}
+            {hardware.isRamOptimizing ? 'OTIMIZANDO...' : 'RAM NÃO ACESSÍVEL'}
           </div>
           <p className="text-[10px] text-slate-400 mt-0.5">
-            {ramOptimizedSuccess ? 'Memória liberada com sucesso!' : 'Libera cache inativo'}
+            {ramOptimizedSuccess ? 'Recurso exige integração Android nativa' : 'RAM do Android não acessível'}
           </p>
         </button>
 
@@ -260,7 +260,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <ChevronRight size={14} className="text-slate-500 group-hover:translate-x-1 transition-transform" />
           </div>
           <div className="font-['Orbitron'] font-bold text-xs text-white">LIMPEZA INTELIGENTE</div>
-          <p className="text-[10px] text-slate-400 mt-0.5">Excluir temporários e APKs</p>
+          <p className="text-[10px] text-slate-400 mt-0.5">Acesso nativo necessário</p>
         </button>
 
         <button
@@ -314,7 +314,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </h3>
           </div>
           <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
-            {hardware.isRealGpu ? 'DETECTADO REAL' : 'SIMULADO'}
+            {hardware.isRealGpu ? 'GPU IDENTIFICADA' : 'IDENTIFICAÇÃO LIMITADA'}
           </span>
         </div>
 

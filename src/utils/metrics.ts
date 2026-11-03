@@ -58,6 +58,7 @@ export function formatSpeed(mbps: number): string {
  */
 export function calculateMemoryHealth(usedPercentage: number): MemoryHealth {
   const clamped = Math.max(0, Math.min(100, usedPercentage));
+  if (usedPercentage <= 0) return { score: 0, status: 'ALERTA', color: '#94a3b8', recommendation: 'Uso de RAM não é exposto pelo navegador; conecte um módulo Android nativo para obter esta medição.' };
   const score = Math.round(100 - clamped);
 
   if (clamped < 60) {
@@ -169,6 +170,8 @@ export function calculateGameModeStability(
   ramUsagePct: number,
   temperatureC: number
 ): { stabilityPct: number; recommendation: string; status: 'ÓTIMA' | 'ESTÁVEL' | 'INSTÁVEL' } {
+  // Do not calculate a stability score from unavailable browser telemetry.
+  if (cpuLoadPct <= 0 && ramUsagePct <= 0 && temperatureC <= 0) return { stabilityPct: 0, recommendation: 'Telemetria real indisponível nesta versão web. O índice será calculado quando houver integração Android nativa.', status: 'INSTÁVEL' };
   // Composite score: weights CPU (35%), RAM (35%), Thermals (30%)
   const thermalPenalty = temperatureC > 45 ? (temperatureC - 45) * 3 : 0;
   const loadPenalty = (cpuLoadPct * 0.35) + (ramUsagePct * 0.35) + thermalPenalty;

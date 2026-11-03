@@ -48,57 +48,13 @@ export const HardwareView: React.FC<HardwareViewProps> = ({
   const ramHealth = calculateMemoryHealth(hardware.ramUsagePct);
   const thermalState = classifyThermalState(hardware.cpuTempC);
 
-  // Speed test simulation with realistic HTTP latency ping probe
-  const handleStartSpeedTest = async () => {
-    if (speedTestRunning) return;
-    setSpeedTestRunning(true);
-    setTestPhase('ping');
-    soundFx.playRadarPing();
-
-    // 1. Ping phase
-    const pingStart = performance.now();
-    try {
-      // Ping check via tiny fetch to current origin
-      await fetch('/index.html', { method: 'HEAD', cache: 'no-store' });
-      const pingDuration = Math.round(performance.now() - pingStart);
-      setTestPing(Math.max(8, Math.min(120, pingDuration)));
-    } catch {
-      setTestPing(22);
-    }
-
-    await new Promise((r) => setTimeout(r, 1200));
-
-    // 2. Download phase
-    setTestPhase('download');
-    soundFx.playClick();
-    for (let i = 0; i < 20; i++) {
-      const simulatedSpeed = 40 + Math.sin(i / 2) * 20 + Math.random() * 15;
-      setLiveTestSpeed(simulatedSpeed);
-      await new Promise((r) => setTimeout(r, 100));
-    }
-    const finalDownload = parseFloat((65 + Math.random() * 25).toFixed(1));
-    setLiveTestSpeed(finalDownload);
-
-    // 3. Upload phase
-    setTestPhase('upload');
-    for (let i = 0; i < 15; i++) {
-      const simulatedUpload = 20 + Math.sin(i / 2) * 8 + Math.random() * 5;
-      setTestUpload(parseFloat(simulatedUpload.toFixed(1)));
-      await new Promise((r) => setTimeout(r, 100));
-    }
-    const finalUpload = parseFloat((28 + Math.random() * 10).toFixed(1));
-    setTestUpload(finalUpload);
-
-    // 4. Complete
-    setTestPhase('complete');
-    soundFx.playCleanComplete();
+  // Browser network information is only an estimate, not an internet speed test.
+  const handleStartSpeedTest = () => {
     setSpeedTestRunning(false);
-
-    onUpdateNetwork({
-      downlinkMbps: finalDownload,
-      uplinkMbps: finalUpload,
-      pingMs: testPing,
-    });
+    setTestPhase('complete');
+    setTestPing(network.pingMs);
+    setLiveTestSpeed(network.downlinkMbps);
+    setTestUpload(0);
   };
 
   return (
@@ -155,20 +111,17 @@ export const HardwareView: React.FC<HardwareViewProps> = ({
                   <h3 className="font-['Orbitron'] text-sm font-bold text-white">
                     MEMÓRIA RAM DINÂMICA
                   </h3>
-                  <p className="text-[11px] text-slate-400">LPDDR5X Dual-Channel 6400MHz</p>
+                  <p className="text-[11px] text-slate-400">Estimativa de memória disponível pelo navegador</p>
                 </div>
               </div>
 
               <button
-                onClick={() => {
-                  soundFx.playGamerBoost();
-                  onOptimizeRam();
-                }}
-                disabled={hardware.isRamOptimizing}
+                onClick={() => { soundFx.playClick(); }}
+                disabled
                 className="px-3 py-1.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 hover:border-cyan-400 text-cyan-400 text-xs font-['Rajdhani'] font-bold flex items-center gap-1.5 transition-all active:scale-95"
               >
                 <Zap size={14} className={hardware.isRamOptimizing ? 'animate-spin' : ''} />
-                <span>{hardware.isRamOptimizing ? 'Liberando...' : 'Liberar RAM'}</span>
+                <span>RAM do Android não acessível</span>
               </button>
             </div>
 
@@ -254,7 +207,7 @@ export const HardwareView: React.FC<HardwareViewProps> = ({
                 </div>
               </div>
               <span className="font-mono text-cyan-400 text-xs px-2.5 py-1 rounded-lg bg-cyan-500/10 border border-cyan-500/30">
-                {hardware.coreCount} NÚCLEOS
+                {hardware.coreCount || 'N/D'} THREADS
               </span>
             </div>
 
@@ -276,7 +229,7 @@ export const HardwareView: React.FC<HardwareViewProps> = ({
                     />
                   </div>
                   <div className="text-[9px] text-slate-500 mt-1">
-                    {index === 0 ? 'Prime (3.2GHz)' : index < 4 ? 'Performance' : 'Efficiency'}
+                    'Carga por núcleo não exposta'
                   </div>
                 </div>
               ))}
@@ -289,7 +242,7 @@ export const HardwareView: React.FC<HardwareViewProps> = ({
               </div>
               <div className="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800">
                 <span className="text-slate-500 text-[10px] uppercase font-bold">Frequência Estimada</span>
-                <p className="text-cyan-400 font-mono mt-0.5">840 MHz ~ 3.20 GHz Dinâmico</p>
+                <p className="text-cyan-400 font-mono mt-0.5">Não disponível pelo navegador</p>
               </div>
             </div>
           </div>
@@ -341,24 +294,24 @@ export const HardwareView: React.FC<HardwareViewProps> = ({
                     backgroundColor: `${thermalState.color}15`,
                   }}
                 >
-                  {thermalState.status}
+                  {hardware.cpuTempC > 0 ? thermalState.status : 'N/D'}
                 </span>
               </div>
 
               <div className="space-y-2 text-xs">
                 <div className="flex justify-between items-center p-2 rounded-lg bg-slate-950/70 border border-slate-800">
                   <span className="text-slate-400">Sensor da CPU (Cores):</span>
-                  <strong className="text-white font-mono">{hardware.cpuTempC.toFixed(1)}°C</strong>
+                  <strong className="text-white font-mono">Não disponível</strong>
                 </div>
 
                 <div className="flex justify-between items-center p-2 rounded-lg bg-slate-950/70 border border-slate-800">
                   <span className="text-slate-400">Sensor da Bateria:</span>
-                  <strong className="text-cyan-400 font-mono">{hardware.batteryTempC.toFixed(1)}°C</strong>
+                  <strong className="text-cyan-400 font-mono">Não disponível</strong>
                 </div>
 
                 <div className="flex justify-between items-center p-2 rounded-lg bg-slate-950/70 border border-slate-800">
                   <span className="text-slate-400">SoC Thermal Zone 0:</span>
-                  <strong className="text-purple-400 font-mono">{hardware.socTempC}°C</strong>
+                  <strong className="text-purple-400 font-mono">Não disponível</strong>
                 </div>
 
                 {/* Thermal recommendation */}
@@ -387,29 +340,29 @@ export const HardwareView: React.FC<HardwareViewProps> = ({
               </div>
               <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono">
                 <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                CONEXÃO SEGURA
+                {network.isConnected ? 'CONECTADO' : 'SEM CONEXÃO'}
               </span>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 text-xs mb-4">
               <div className="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800">
                 <span className="text-[10px] text-slate-500 uppercase font-bold">Nome da Rede (SSID)</span>
-                <p className="text-white font-bold truncate mt-0.5">{network.ssid}</p>
+                <p className="text-white font-bold truncate mt-0.5">Não acessível pelo navegador</p>
               </div>
 
               <div className="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800">
                 <span className="text-[10px] text-slate-500 uppercase font-bold">Frequência de Rádio</span>
-                <p className="text-cyan-400 font-mono mt-0.5">{network.frequencyGhz}</p>
+                <p className="text-cyan-400 font-mono mt-0.5">Não disponível</p>
               </div>
 
               <div className="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800">
                 <span className="text-[10px] text-slate-500 uppercase font-bold">Intensidade do Sinal</span>
-                <p className="text-emerald-400 font-mono mt-0.5">{network.signalStrengthDbm} dBm (Excelente)</p>
+                <p className="text-emerald-400 font-mono mt-0.5">Não acessível</p>
               </div>
 
               <div className="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800">
                 <span className="text-[10px] text-slate-500 uppercase font-bold">Protocolo</span>
-                <p className="text-white font-mono mt-0.5">{network.networkType} / WPA3</p>
+                <p className="text-white font-mono mt-0.5">{network.networkType} / segurança não identificada</p>
               </div>
             </div>
 
@@ -424,7 +377,7 @@ export const HardwareView: React.FC<HardwareViewProps> = ({
 
               <div className="relative z-10">
                 <h4 className="font-['Orbitron'] text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">
-                  TESTE DE VELOCIDADE DE INTERNET
+                  ESTIMATIVA DE REDE DO NAVEGADOR (NÃO É SPEEDTEST)
                 </h4>
 
                 <div className="flex justify-center items-center my-3">
@@ -434,7 +387,7 @@ export const HardwareView: React.FC<HardwareViewProps> = ({
                     strokeWidth={10}
                     color="#00f0ff"
                     glowColor="rgba(0, 240, 255, 0.6)"
-                    title={testPhase === 'idle' ? 'DOWNLOAD' : testPhase.toUpperCase()}
+                    title={testPhase === 'idle' ? 'ESTIMATIVA' : testPhase.toUpperCase()}
                     unit="Mbps"
                   />
                 </div>
@@ -445,13 +398,13 @@ export const HardwareView: React.FC<HardwareViewProps> = ({
                     <strong className="text-cyan-400 text-sm">{speedTestRunning ? testPing : network.pingMs} ms</strong>
                   </div>
                   <div>
-                    <span className="text-slate-500 text-[10px] block uppercase">DOWNLOAD</span>
+                    <span className="text-slate-500 text-[10px] block uppercase">ESTIMATIVA</span>
                     <strong className="text-emerald-400 text-sm">
                       {speedTestRunning && testPhase === 'download' ? liveTestSpeed.toFixed(1) : network.downlinkMbps.toFixed(1)} Mbps
                     </strong>
                   </div>
                   <div>
-                    <span className="text-slate-500 text-[10px] block uppercase">UPLOAD</span>
+                    <span className="text-slate-500 text-[10px] block uppercase">UPLOAD NÃO DISPONÍVEL</span>
                     <strong className="text-purple-400 text-sm">
                       {speedTestRunning && testPhase === 'upload' ? testUpload.toFixed(1) : network.uplinkMbps.toFixed(1)} Mbps
                     </strong>

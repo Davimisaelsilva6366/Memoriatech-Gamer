@@ -99,14 +99,14 @@ export const GamerModeView: React.FC<GamerModeViewProps> = ({
                 <span className="text-[11px] font-['Orbitron'] font-bold tracking-widest uppercase" style={{
                   color: isGamerModeActive ? '#ff2a85' : '#94a3b8'
                 }}>
-                  {isGamerModeActive ? 'MODO GAMER ATIVADO — PERTURBAÇÕES BLOQUEADAS' : 'MODO GAMER EM ESPERA'}
+                  {isGamerModeActive ? 'PREFERÊNCIA GAMER ATIVA NESTE APP' : 'MODO GAMER EM ESPERA'}
                 </span>
               </div>
               <h2 className="text-xl font-['Orbitron'] font-black text-white tracking-wider mt-0.5">
                 CYBER GAMING ACCELERATOR
               </h2>
               <p className="text-xs text-slate-400">
-                Alocação prioritária de threads e limpeza de cache antes da partida
+                Atalhos e preferências visuais; não altera configurações do Android
               </p>
             </div>
           </div>
@@ -139,12 +139,12 @@ export const GamerModeView: React.FC<GamerModeViewProps> = ({
           <div className="flex items-center gap-3">
             <Flame size={24} className="animate-pulse" />
             <div>
-              <div className="text-xs uppercase tracking-widest font-bold">Iniciando Jogo com Prioridade Gamer</div>
+              <div className="text-xs uppercase tracking-widest font-bold">Atalho visual — abertura nativa não disponível</div>
               <div className="text-base font-black">{activeGameLaunch}</div>
             </div>
           </div>
           <span className="text-xs font-mono bg-black/40 px-3 py-1 rounded-full border border-white/20">
-            FPS Alvo: {selectedFpsTarget}Hz
+            Preferência de FPS: {selectedFpsTarget}Hz
           </span>
         </div>
       )}
@@ -220,7 +220,7 @@ export const GamerModeView: React.FC<GamerModeViewProps> = ({
               PROTEÇÃO TÉRMICA
             </span>
             <span className="text-[10px] font-mono text-pink-400">
-              {hardware.cpuTempC.toFixed(1)}°C
+              N/D
             </span>
           </div>
 
@@ -239,7 +239,7 @@ export const GamerModeView: React.FC<GamerModeViewProps> = ({
           <div className="text-[10px] text-slate-400 flex justify-between pt-1 border-t border-slate-800">
             <span>Estrangulamento (Throttling):</span>
             <strong className={hardware.cpuTempC > 45 ? 'text-red-400' : 'text-emerald-400'}>
-              {hardware.cpuTempC > 45 ? 'ALERTA DE QUEDA DE FPS' : 'NENHUM RISCO'}
+              {hardware.cpuTempC > 45 ? 'ALERTA DE QUEDA DE FPS' : 'Temperatura não disponível'}
             </strong>
           </div>
         </div>
@@ -387,7 +387,7 @@ export const GamerModeView: React.FC<GamerModeViewProps> = ({
       <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 text-[11px] text-slate-400 flex items-start gap-2.5">
         <ShieldCheck size={16} className="text-cyan-400 shrink-0 mt-0.5" />
         <p>
-          <strong className="text-slate-200">Gamer Ético & Transparente:</strong> O Memóriatech Gamer prioriza recursos de memória RAM para os jogos e estabiliza a taxa de quadros (FPS) minimizando interrupções em segundo plano. Não realizamos overclock ou promessas irreais que danifiquem o hardware do seu smartphone.
+          <strong className="text-slate-200">Modo Gamer local:</strong> O Memóriatech Gamer guarda preferências dentro do aplicativo. Não altera RAM, FPS, processos, notificações ou desempenho do Android. Não realizamos overclock ou promessas irreais que danifiquem o hardware do seu smartphone.
         </p>
       </div>
     </div>

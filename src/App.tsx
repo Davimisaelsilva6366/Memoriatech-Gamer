@@ -19,7 +19,7 @@ import {
   INITIAL_JUNK_ITEMS,
   INITIAL_INSTALLED_APPS,
 } from './utils/hardwareDetection';
-import { simulateRamOptimization, JunkItem } from './utils/metrics';
+import { JunkItem } from './utils/metrics';
 import { soundFx } from './utils/audio';
 import { CyberHeader } from './components/CyberHeader';
 import { Navigation } from './components/Navigation';
@@ -35,7 +35,7 @@ export default function App() {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [isPhoneFrame, setIsPhoneFrame] = useState(false);
   const [isGamerModeActive, setIsGamerModeActive] = useState(false);
-  const [uptimeSeconds, setUptimeSeconds] = useState(3842); // 1h 04m initial
+  const [uptimeSeconds, setUptimeSeconds] = useState(0); // tempo desta sessão do aplicativo
 
   // Hardware and system telemetry states
   const [hardware, setHardware] = useState<HardwareState | null>(null);
@@ -43,7 +43,7 @@ export default function App() {
   const [storage, setStorage] = useState<StorageState | null>(null);
   const [device, setDevice] = useState<DeviceInfo | null>(null);
   const [junkItems, setJunkItems] = useState<JunkItem[]>(INITIAL_JUNK_ITEMS);
-  const [installedApps, setInstalledApps] = useState<InstalledApp[]>(INITIAL_INSTALLED_APPS);
+  const [installedApps] = useState<InstalledApp[]>(INITIAL_INSTALLED_APPS);
 
   const theme = THEMES[selectedThemeKey];
 
@@ -57,32 +57,9 @@ export default function App() {
     });
   }, []);
 
-  // 2. Real-time background telemetry tick (uptime + subtle CPU jitter)
+  // Session timer only. Browser cannot read Android uptime or CPU load.
   useEffect(() => {
-    const timer = setInterval(() => {
-      setUptimeSeconds((prev) => prev + 1);
-
-      // Subtle live sensor updates
-      setHardware((prev) => {
-        if (!prev) return prev;
-        const jitter = (Math.random() - 0.5) * 4;
-        const newCpu = Math.max(12, Math.min(94, Math.round(prev.cpuUsagePct + jitter)));
-        const newHistory = [...prev.cpuHistory.slice(1), newCpu];
-
-        // Update core loads
-        const updatedCoreLoads = prev.coreLoads.map((load) =>
-          Math.max(10, Math.min(100, Math.round(load + (Math.random() - 0.5) * 6)))
-        );
-
-        return {
-          ...prev,
-          cpuUsagePct: newCpu,
-          cpuHistory: newHistory,
-          coreLoads: updatedCoreLoads,
-        };
-      });
-    }, 1000);
-
+    const timer = setInterval(() => setUptimeSeconds((prev) => prev + 1), 1000);
     return () => clearInterval(timer);
   }, []);
 
@@ -91,26 +68,9 @@ export default function App() {
     soundFx.enabled = soundEnabled;
   }, [soundEnabled]);
 
-  // Handle RAM Optimization
+  // Android RAM reclamation is not available to a browser/PWA.
   const handleOptimizeRam = () => {
-    if (!hardware) return;
-    setHardware((prev) => (prev ? { ...prev, isRamOptimizing: true } : null));
-
-    setTimeout(() => {
-      const optimization = simulateRamOptimization(hardware.usedRamMb, hardware.totalRamMb, 6);
-      setHardware((prev) => {
-        if (!prev) return prev;
-        const newPct = Math.round((optimization.newUsedMb / prev.totalRamMb) * 100);
-        return {
-          ...prev,
-          usedRamMb: optimization.newUsedMb,
-          availableRamMb: prev.totalRamMb - optimization.newUsedMb,
-          ramUsagePct: newPct,
-          ramHistory: [...prev.ramHistory.slice(1), newPct],
-          isRamOptimizing: false,
-        };
-      });
-    }, 800);
+    // Intentionally no-op: the UI explains this limitation instead of faking a boost.
   };
 
   // Quick theme cycler

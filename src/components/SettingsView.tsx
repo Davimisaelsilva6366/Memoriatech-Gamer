@@ -50,11 +50,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
   const handleAppAction = (action: string, appName: string) => {
     soundFx.playClick();
-    setAppActionNotice(`${action}: Abrindo intent nativo do sistema para "${appName}"...`);
+    setAppActionNotice(`${action}: Ação nativa indisponível nesta versão web para "${appName}"...`);
     setTimeout(() => setAppActionNotice(null), 4000);
   };
 
-  const sampleKotlinCode = `// Memóriatech Gamer - Arquitetura Android 14+ Jetpack Compose
+  const sampleKotlinCode = `// Memóriatech Gamer - Arquitetura Android Jetpack Compose (exemplo ilustrativo)
 package com.memoriatech.gamer
 
 import android.app.ActivityManager
@@ -242,7 +242,7 @@ fun GamerDashboardScreen(viewModel: HardwareTelemetryViewModel) {
 
               <div className="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 flex justify-between">
                 <span className="text-slate-400">Memória RAM Instalada:</span>
-                <strong className="text-white font-mono">{(hardware.totalRamMb / 1024).toFixed(0)} GB LPDDR5X</strong>
+                <strong className="text-white font-mono">{(hardware.totalRamMb / 1024).toFixed(0)} GB estimada pelo navegador</strong>
               </div>
 
               <div className="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 flex justify-between">
@@ -257,7 +257,7 @@ fun GamerDashboardScreen(viewModel: HardwareTelemetryViewModel) {
 
               <div className="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 flex justify-between">
                 <span className="text-slate-400">Armazenamento Total:</span>
-                <strong className="text-white font-mono">{formatBytes(storage.totalBytes, 0)} UFS 4.0</strong>
+                <strong className="text-white font-mono">{formatBytes(storage.totalBytes, 0)} (quota do site)</strong>
               </div>
 
               <div className="p-2.5 rounded-xl bg-slate-950/70 border border-slate-800 flex justify-between">
@@ -498,7 +498,7 @@ fun GamerDashboardScreen(viewModel: HardwareTelemetryViewModel) {
           </pre>
 
           <div className="mt-3 p-2.5 rounded-xl bg-slate-950/60 border border-slate-800 text-[11px] text-slate-400">
-            ✓ Compatibilidade garantida com Android 13 (Tiramisu) e Android 14+ (Upside Down Cake) usando Material 3 e Coroutines StateFlow.
+            ✓ Exemplo de arquitetura nativa. Ainda exige projeto Android, permissões e testes no dispositivo antes de ser considerado compatível.
           </div>
         </div>
       )}

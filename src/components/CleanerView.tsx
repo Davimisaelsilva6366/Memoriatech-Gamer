@@ -51,10 +51,7 @@ export const CleanerView: React.FC<CleanerViewProps> = ({
 
   // Storage category distribution
   const categories = calculateStorageCategories(storage.totalBytes, [
-    { name: 'Jogos & Aplicativos', bytes: Math.round(storage.usedBytes * 0.55), color: '#00f0ff' },
-    { name: 'Mídia & Vídeos', bytes: Math.round(storage.usedBytes * 0.25), color: '#a855f7' },
-    { name: 'Arquivos Temporários', bytes: summary.totalBytes, color: '#ff2a85' },
-    { name: 'Sistema Android 14', bytes: Math.round(storage.usedBytes * 0.15), color: '#94a3b8' },
+    { name: 'Uso desta aplicação', bytes: storage.usedBytes, color: '#00f0ff' },
   ]);
 
   // Toggle single item selection
@@ -79,53 +76,22 @@ export const CleanerView: React.FC<CleanerViewProps> = ({
     );
   };
 
-  // Trigger scanning radar animation
-  const handleStartScan = async () => {
-    if (isScanning || isCleaning) return;
-    setIsScanning(true);
-    setScanProgress(0);
-    soundFx.playRadarPing();
-
-    for (let i = 1; i <= 10; i++) {
-      await new Promise((r) => setTimeout(r, 120));
-      setScanProgress(i * 10);
-    }
-
+  // A PWA cannot enumerate or delete arbitrary Android files. No fake scan is performed.
+  const handleStartScan = () => {
     setIsScanning(false);
-    soundFx.playClick();
+    setScanProgress(0);
+    setCleanSuccessMessage('A análise de arquivos do Android exige acesso nativo/SAF. Nenhum arquivo foi alterado.');
   };
 
-  // Execute cleaning after user confirmation
   const handleConfirmClean = async () => {
     setShowConfirmModal(false);
-    setIsCleaning(true);
-    soundFx.playGamerBoost();
-
-    await new Promise((r) => setTimeout(r, 1400));
-
-    const reclaimedBytes = summary.totalSelectedBytes;
-    const remainingItems = junkItems.filter((item) => !item.selected);
-    onUpdateJunkItems(remainingItems);
-
-    const newUsed = Math.max(storage.totalBytes * 0.3, storage.usedBytes - reclaimedBytes);
-    onUpdateStorage({
-      ...storage,
-      usedBytes: newUsed,
-      availableBytes: storage.totalBytes - newUsed,
-      usedPercentage: Math.round((newUsed / storage.totalBytes) * 100),
-    });
-
     setIsCleaning(false);
-    soundFx.playCleanComplete();
-    setCleanSuccessMessage(`Limpeza concluída! ${formatBytes(reclaimedBytes)} liberados no armazenamento.`);
-    setTimeout(() => setCleanSuccessMessage(null), 5000);
+    setCleanSuccessMessage('Nenhum arquivo foi excluído. Esta versão web não possui permissão para apagar arquivos do dispositivo.');
   };
 
-  // Simulate SD Card Transfer via Android SAF
   const handleTransferToSdCard = () => {
-    soundFx.playClick();
     setSdTransferSuccess(true);
-    setTimeout(() => setSdTransferSuccess(false), 4000);
+    setTimeout(() => setSdTransferSuccess(false), 5000);
   };
 
   return (
@@ -141,7 +107,7 @@ export const CleanerView: React.FC<CleanerViewProps> = ({
               <h3 className="font-['Orbitron'] text-sm font-bold text-white">
                 ARMAZENAMENTO DO DISPOSITIVO
               </h3>
-              <p className="text-[11px] text-slate-400">Memória Flash UFS 4.0 de Alta Velocidade</p>
+              <p className="text-[11px] text-slate-400">Dados de armazenamento disponibilizados pelo navegador</p>
             </div>
           </div>
           <span className="font-mono text-xs text-purple-400 px-2 py-1 rounded bg-purple-500/10 border border-purple-500/30">
@@ -206,11 +172,11 @@ export const CleanerView: React.FC<CleanerViewProps> = ({
             <div className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]" />
             <div>
               <span className="text-xs font-bold text-white flex items-center gap-1.5 font-['Rajdhani']">
-                <span>CARTÃO MICROSD EXTERNO DETECTADO</span>
-                <span className="text-[10px] text-emerald-400 font-mono">(128 GB XC I)</span>
+                <span>CARTÃO MICROSD</span>
+                <span className="text-[10px] text-emerald-400 font-mono">(acesso não disponível)</span>
               </span>
               <p className="text-[10px] text-slate-400">
-                Livre no SD: {formatBytes(storage.microSdTotalBytes - storage.microSdUsedBytes, 0)} disponíveis
+                Acesso ao cartão depende de integração Android nativa
               </p>
             </div>
           </div>
@@ -228,7 +194,7 @@ export const CleanerView: React.FC<CleanerViewProps> = ({
         {sdTransferSuccess && (
           <div className="mt-2 p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs flex items-center gap-2">
             <CheckCircle2 size={14} />
-            <span>Seletor de arquivos Android SAF aberto: dados prontos para transferência para o MicroSD.</span>
+            <span>O navegador não consegue abrir o seletor SAF nem transferir arquivos automaticamente. Nenhum arquivo foi movido.</span>
           </div>
         )}
       </div>
@@ -253,7 +219,7 @@ export const CleanerView: React.FC<CleanerViewProps> = ({
                 CENTRAL DE LIMPEZA INTELIGENTE
               </h3>
               <p className="text-[11px] text-slate-400">
-                Varredura de APKs residuais, miniaturas e lixo seguro
+                Analisa apenas arquivos autorizados pelo usuário (integração nativa necessária)
               </p>
             </div>
           </div>
@@ -266,7 +232,7 @@ export const CleanerView: React.FC<CleanerViewProps> = ({
             className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-['Orbitron'] font-bold text-xs uppercase tracking-wider flex items-center gap-2 shadow-[0_0_12px_rgba(0,240,255,0.3)] active:scale-95 transition-all"
           >
             <RefreshCw size={14} className={isScanning ? 'animate-spin' : ''} />
-            <span>{isScanning ? `VARRENDO (${scanProgress}%)...` : 'ESCANEAR LIXO'}</span>
+            <span>{isScanning ? `VARRENDO (${scanProgress}%)...` : 'VER LIMITAÇÕES'}</span>
           </button>
         </div>
 
@@ -325,8 +291,8 @@ export const CleanerView: React.FC<CleanerViewProps> = ({
           {summary.filtered.length === 0 ? (
             <div className="text-center py-8 text-slate-500">
               <CheckCircle2 size={32} className="mx-auto mb-2 text-emerald-400 opacity-60" />
-              <p className="text-xs font-['Rajdhani'] font-bold">Nenhum lixo detectado nesta categoria!</p>
-              <p className="text-[10px] text-slate-500">Seu armazenamento está limpo e otimizado.</p>
+              <p className="text-xs font-['Rajdhani'] font-bold">Nenhum arquivo foi analisado</p>
+              <p className="text-[10px] text-slate-500">O navegador não tem acesso à lista de arquivos do Android.</p>
             </div>
           ) : (
             summary.filtered.map((item) => (
@@ -410,7 +376,7 @@ export const CleanerView: React.FC<CleanerViewProps> = ({
               </div>
               <div>
                 <h4 className="font-['Orbitron'] font-bold text-sm text-white">CONFIRMAR LIMPEZA</h4>
-                <p className="text-xs text-slate-400">Ação irreversível de exclusão de arquivos</p>
+                <p className="text-xs text-slate-400">Ação indisponível nesta versão web</p>
               </div>
             </div>
 
@@ -437,7 +403,7 @@ export const CleanerView: React.FC<CleanerViewProps> = ({
                 onClick={handleConfirmClean}
                 className="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-['Orbitron'] font-bold text-xs uppercase shadow-lg shadow-red-600/30"
               >
-                Confirmar Exclusão
+                Entendi
               </button>
             </div>
           </div>
