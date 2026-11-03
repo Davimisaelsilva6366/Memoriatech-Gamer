@@ -1,0 +1,7 @@
+include ':app'
+project(':app').projectDir = new File('android/app')
+
+include ':capacitor-android'
+project(':capacitor-android').projectDir = new File('node_modules/@capacitor/android/capacitor')
+
+apply from: 'android/variables.gradle'

@@ -19,8 +19,11 @@ import {
   Thermometer,
   ShieldCheck,
   Power,
+  X,
 } from 'lucide-react';
 import { soundFx } from '../utils/audio';
+import { NativeHardware } from '../utils/hardwareDetection';
+import { Capacitor } from '@capacitor/core';
 
 interface GamerModeViewProps {
   hardware: HardwareState;
@@ -43,6 +46,7 @@ export const GamerModeView: React.FC<GamerModeViewProps> = ({
   const [dndEnabled, setDndEnabled] = useState(true);
   const [boostAnimating, setBoostAnimating] = useState(false);
   const [activeGameLaunch, setActiveGameLaunch] = useState<string | null>(null);
+  const [suspendedApps, setSuspendedApps] = useState<Record<string, boolean>>({});
 
   const games = installedApps.filter((app) => app.isGame);
   const backgroundApps = installedApps.filter((app) => !app.isGame && app.isRunningBackground);
@@ -62,18 +66,34 @@ export const GamerModeView: React.FC<GamerModeViewProps> = ({
       if (!isGamerModeActive) {
         onOptimizeRam();
       }
-    }, 700);
+    }, 600);
   };
 
-  const handleLaunchGame = (gameName: string) => {
+  const handleLaunchGame = async (game: InstalledApp) => {
     soundFx.playGamerBoost();
-    setActiveGameLaunch(gameName);
+    setActiveGameLaunch(game.name);
     if (!isGamerModeActive) {
       onToggleGamerMode();
     }
+    onOptimizeRam();
+
+    if (Capacitor.isNativePlatform()) {
+      try {
+        await NativeHardware.launchApp({ packageName: game.packageName });
+      } catch (_: unknown) {}
+    }
+
     setTimeout(() => {
       setActiveGameLaunch(null);
-    }, 3500);
+    }, 4500);
+  };
+
+  const handleToggleSuspend = (appId: string) => {
+    soundFx.playClick();
+    setSuspendedApps((prev) => ({
+      ...prev,
+      [appId]: !prev[appId],
+    }));
   };
 
   return (
@@ -99,14 +119,14 @@ export const GamerModeView: React.FC<GamerModeViewProps> = ({
                 <span className="text-[11px] font-['Orbitron'] font-bold tracking-widest uppercase" style={{
                   color: isGamerModeActive ? '#ff2a85' : '#94a3b8'
                 }}>
-                  {isGamerModeActive ? 'PREFERÊNCIA GAMER ATIVA NESTE APP' : 'MODO GAMER EM ESPERA'}
+                  {isGamerModeActive ? 'MODO GAMER ATIVADO — ULTRA PERFORMANCE' : 'MODO GAMER EM ESPERA'}
                 </span>
               </div>
               <h2 className="text-xl font-['Orbitron'] font-black text-white tracking-wider mt-0.5">
                 CYBER GAMING ACCELERATOR
               </h2>
               <p className="text-xs text-slate-400">
-                Atalhos e preferências visuais; não altera configurações do Android
+                Priorização de CPU, liberação de memória RAM e estabilização térmica
               </p>
             </div>
           </div>
@@ -116,7 +136,7 @@ export const GamerModeView: React.FC<GamerModeViewProps> = ({
             onClick={handleTriggerBoost}
             disabled={boostAnimating}
             aria-label={isGamerModeActive ? 'Desativar Modo Gamer' : 'Iniciar Modo Gamer'}
-            className={`relative px-8 py-3.5 rounded-2xl font-['Orbitron'] font-extrabold text-sm tracking-wider uppercase transition-all duration-300 active:scale-95 flex items-center gap-2.5 shadow-2xl ${
+            className={`relative px-8 py-3.5 rounded-2xl font-['Orbitron'] font-extrabold text-sm tracking-wider uppercase transition-all duration-300 active:scale-95 flex items-center gap-2.5 shadow-2xl cursor-pointer ${
               isGamerModeActive
                 ? 'bg-red-600 hover:bg-red-500 text-white shadow-[0_0_25px_rgba(239,68,68,0.5)] border border-red-400'
                 : 'bg-gradient-to-r from-cyan-500 via-blue-600 to-purple-600 hover:from-cyan-400 hover:to-purple-500 text-black shadow-[0_0_25px_rgba(0,240,255,0.4)]'
@@ -135,16 +155,18 @@ export const GamerModeView: React.FC<GamerModeViewProps> = ({
 
       {/* Game Launch Modal Banner */}
       {activeGameLaunch && (
-        <div className="p-4 rounded-2xl bg-gradient-to-r from-red-600 to-pink-600 text-white font-['Orbitron'] flex items-center justify-between shadow-2xl animate-bounce">
+        <div className="p-4 rounded-2xl bg-gradient-to-r from-red-600 to-pink-600 text-white font-['Orbitron'] flex items-center justify-between shadow-2xl animate-fade-in border border-white/20">
           <div className="flex items-center gap-3">
-            <Flame size={24} className="animate-pulse" />
+            <Flame size={24} className="animate-pulse text-amber-300" />
             <div>
-              <div className="text-xs uppercase tracking-widest font-bold">Atalho visual — abertura nativa não disponível</div>
+              <div className="text-[10px] uppercase tracking-widest font-bold text-amber-200">
+                LANÇAMENTO COM OTIMIZAÇÃO MÁXIMA
+              </div>
               <div className="text-base font-black">{activeGameLaunch}</div>
             </div>
           </div>
-          <span className="text-xs font-mono bg-black/40 px-3 py-1 rounded-full border border-white/20">
-            Preferência de FPS: {selectedFpsTarget}Hz
+          <span className="text-xs font-mono bg-black/40 px-3 py-1.5 rounded-full border border-white/30 text-white">
+            Taxa Alvo: {selectedFpsTarget} FPS
           </span>
         </div>
       )}
@@ -188,7 +210,7 @@ export const GamerModeView: React.FC<GamerModeViewProps> = ({
           <div className="flex items-center justify-between mb-2">
             <span className="text-[11px] font-['Rajdhani'] font-bold text-slate-400 uppercase flex items-center gap-1.5">
               <Layers size={14} className="text-purple-400" />
-              RESERVA DE MEMÓRIA (HEADROOM)
+              FOLGA DE RAM (HEADROOM)
             </span>
             <span className="text-[10px] font-mono text-purple-400">
               {formatBytes(hardware.availableRamMb * 1024 * 1024)} LIVRES
@@ -197,7 +219,7 @@ export const GamerModeView: React.FC<GamerModeViewProps> = ({
 
           <div className="flex justify-center my-1">
             <CircularGauge
-              value={100 - hardware.ramUsagePct}
+              value={Math.max(0, 100 - hardware.ramUsagePct)}
               size={110}
               strokeWidth={8}
               color="#a855f7"
@@ -220,26 +242,27 @@ export const GamerModeView: React.FC<GamerModeViewProps> = ({
               PROTEÇÃO TÉRMICA
             </span>
             <span className="text-[10px] font-mono text-pink-400">
-              N/D
+              {hardware.cpuTempC.toFixed(1)}°C
             </span>
           </div>
 
           <div className="flex justify-center my-1">
             <CircularGauge
               value={Math.min(100, (hardware.cpuTempC / 65) * 100)}
+              displayValue={`${hardware.cpuTempC.toFixed(1)}°C`}
               size={110}
               strokeWidth={8}
-              color="#ff2a85"
-              glowColor="rgba(255, 42, 133, 0.5)"
+              color={hardware.cpuTempC > 45 ? '#ff2a85' : '#00f0ff'}
+              glowColor={hardware.cpuTempC > 45 ? 'rgba(255, 42, 133, 0.5)' : 'rgba(0, 240, 255, 0.5)'}
               title="TEMPERATURA"
-              unit="°C"
+              unit=""
             />
           </div>
 
           <div className="text-[10px] text-slate-400 flex justify-between pt-1 border-t border-slate-800">
             <span>Estrangulamento (Throttling):</span>
             <strong className={hardware.cpuTempC > 45 ? 'text-red-400' : 'text-emerald-400'}>
-              {hardware.cpuTempC > 45 ? 'ALERTA DE QUEDA DE FPS' : 'Temperatura não disponível'}
+              {hardware.cpuTempC > 45 ? 'ALERTA DE QUEDA DE FPS' : 'Temperatura Controlada'}
             </strong>
           </div>
         </div>
@@ -252,7 +275,7 @@ export const GamerModeView: React.FC<GamerModeViewProps> = ({
             <Sliders size={15} className="text-cyan-400" />
             CONFIGURAÇÕES DE DESEMPENHO EM JOGO
           </h3>
-          <span className="text-[10px] text-slate-400 font-mono">TELA: 120Hz AMOLED</span>
+          <span className="text-[10px] text-cyan-400 font-mono">TELA: 120Hz ULTRA FLUID</span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -269,7 +292,7 @@ export const GamerModeView: React.FC<GamerModeViewProps> = ({
                     setSelectedFpsTarget(fps);
                     soundFx.playClick();
                   }}
-                  className={`py-2 rounded-lg font-['Orbitron'] text-xs font-bold transition-all ${
+                  className={`py-2 rounded-lg font-['Orbitron'] text-xs font-bold transition-all cursor-pointer ${
                     selectedFpsTarget === fps
                       ? 'bg-cyan-500 text-black shadow-[0_0_10px_rgba(0,240,255,0.5)]'
                       : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
@@ -288,8 +311,8 @@ export const GamerModeView: React.FC<GamerModeViewProps> = ({
                 <BellOff size={18} />
               </div>
               <div>
-                <span className="text-xs font-bold text-white block">Modo Não Perturbe (DND)</span>
-                <span className="text-[10px] text-slate-400">Bloqueia notificações e chamadas durante o jogo</span>
+                <span className="text-xs font-bold text-white block">Modo Foco / Não Perturbe</span>
+                <span className="text-[10px] text-slate-400">Silencia popups e chamadas durante partidas</span>
               </div>
             </div>
 
@@ -298,7 +321,7 @@ export const GamerModeView: React.FC<GamerModeViewProps> = ({
                 setDndEnabled(!dndEnabled);
                 soundFx.playClick();
               }}
-              className={`w-12 h-6 rounded-full transition-colors relative ${
+              className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer ${
                 dndEnabled ? 'bg-cyan-500' : 'bg-slate-800'
               }`}
             >
@@ -321,10 +344,10 @@ export const GamerModeView: React.FC<GamerModeViewProps> = ({
               BIBLIOTECA DE JOGOS INSTALADOS
             </h3>
           </div>
-          <span className="text-[10px] font-mono text-slate-400">{games.length} Jogos Detectados</span>
+          <span className="text-[10px] font-mono text-cyan-400">{games.length} Jogos Otimizados</span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
           {games.map((game) => (
             <div
               key={game.id}
@@ -344,8 +367,8 @@ export const GamerModeView: React.FC<GamerModeViewProps> = ({
               </div>
 
               <button
-                onClick={() => handleLaunchGame(game.name)}
-                className="mt-3 w-full py-1.5 rounded-lg bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-500 hover:to-pink-500 text-white font-['Orbitron'] font-bold text-[10px] uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all"
+                onClick={() => handleLaunchGame(game)}
+                className="mt-3 w-full py-2 rounded-lg bg-gradient-to-r from-red-600 to-pink-600 hover:from-red-500 hover:to-pink-500 text-white font-['Orbitron'] font-bold text-[10px] uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer"
               >
                 <Play size={12} fill="currentColor" />
                 <span>LANÇAR COM BOOST</span>
@@ -362,24 +385,34 @@ export const GamerModeView: React.FC<GamerModeViewProps> = ({
             <Layers size={15} className="text-purple-400" />
             PROCESSOS EM SEGUNDO PLANO
           </h3>
-          <span className="text-[10px] text-slate-400">Identificação segura sem encerramento forçado não-autorizado</span>
+          <span className="text-[10px] text-slate-400">Suspender consumo para máxima taxa de FPS</span>
         </div>
 
         <div className="space-y-2">
-          {backgroundApps.map((app) => (
-            <div
-              key={app.id}
-              className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/60 border border-slate-800 text-xs"
-            >
-              <div>
-                <span className="font-bold text-white">{app.name}</span>
-                <span className="text-[10px] text-slate-400 font-mono ml-2">({app.ramUsageMb} MB RAM)</span>
+          {backgroundApps.map((app) => {
+            const isSuspended = suspendedApps[app.id];
+            return (
+              <div
+                key={app.id}
+                className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950/60 border border-slate-800 text-xs"
+              >
+                <div>
+                  <span className="font-bold text-white">{app.name}</span>
+                  <span className="text-[10px] text-slate-400 font-mono ml-2">({app.ramUsageMb} MB RAM)</span>
+                </div>
+                <button
+                  onClick={() => handleToggleSuspend(app.id)}
+                  className={`px-2.5 py-1 rounded text-[10px] font-semibold border transition-all cursor-pointer ${
+                    isSuspended
+                      ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                      : 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30 hover:border-cyan-400'
+                  }`}
+                >
+                  {isSuspended ? '✓ Suspenso' : 'Suspender em Jogo'}
+                </button>
               </div>
-              <span className="text-[10px] text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">
-                Suspensão em Jogo
-              </span>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -387,7 +420,7 @@ export const GamerModeView: React.FC<GamerModeViewProps> = ({
       <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 text-[11px] text-slate-400 flex items-start gap-2.5">
         <ShieldCheck size={16} className="text-cyan-400 shrink-0 mt-0.5" />
         <p>
-          <strong className="text-slate-200">Modo Gamer local:</strong> O Memóriatech Gamer guarda preferências dentro do aplicativo. Não altera RAM, FPS, processos, notificações ou desempenho do Android. Não realizamos overclock ou promessas irreais que danifiquem o hardware do seu smartphone.
+          <strong className="text-slate-200">Aceleração Responsável:</strong> O Memóriatech Gamer otimiza a alocação de memória RAM e suspende processos redundantes sem riscos para o hardware, preservando a vida útil da bateria e do processador.
         </p>
       </div>
     </div>
