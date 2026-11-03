@@ -40,9 +40,6 @@ jobs:
       - name: Compilar aplicativo web
         run: npm run build
 
-      - name: Criar projeto Android
-        run: npx cap add android
-
       - name: Sincronizar Capacitor
         run: npx cap sync android
 
