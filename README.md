@@ -1,20 +1,34 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# Memóriatech Gamer
 
-# Run and deploy your AI Studio app
+**Sua memória, seu desempenho, seu controle.**
 
-This contains everything you need to run your app locally.
+Aplicativo/protótipo de monitoramento de hardware, diagnóstico e gerenciamento inteligente para Android.
 
-View your app in AI Studio: https://ai.studio/apps/633972be-ad59-4aa7-b5e7-98e3c0ff48b9
+## Recursos planejados
+- Painel de memória RAM, CPU e informações de GPU disponíveis no Android.
+- Monitoramento de sensores térmicos compatíveis.
+- Diagnóstico de Wi-Fi e rede.
+- Visão geral do armazenamento e gerenciamento de arquivos.
+- Ferramentas de limpeza com confirmação explícita.
+- Modo Gamer com indicadores de desempenho.
+- Temas futuristas em azul, rosa, roxo, dourado, branco e preto.
 
-## Run Locally
+## Tecnologias do protótipo recebido
+- React
+- TypeScript
+- Vite
 
-**Prerequisites:**  Node.js
+> **Nota:** o protótipo atual é uma aplicação web. Recursos de hardware Android dependem de uma camada nativa (por exemplo, Kotlin/Android APIs ou Capacitor) e das permissões e limitações do sistema. Dados não disponíveis devem ser exibidos como indisponíveis, nunca simulados como medições reais.
 
+## Desenvolvimento
+Instale as dependências e inicie o ambiente local:
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+```bash
+npm install
+npm run dev
+```
+
+Consulte `package.json` para os scripts disponíveis.
+
+## Segurança
+O app deve solicitar apenas permissões necessárias, não apagar dados sem autorização e respeitar o isolamento de aplicativos do Android.
