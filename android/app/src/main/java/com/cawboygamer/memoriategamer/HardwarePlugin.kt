@@ -129,7 +129,7 @@ class HardwarePlugin : Plugin() {
             val sensorManager =
                 appContext.getSystemService(Context.SENSOR_SERVICE) as SensorManager
 
-            val sensorNames = sensorManager.getSensorList(SensorManager.TYPE_ALL)
+            val sensorNames = sensorManager.getSensorList(Sensor.TYPE_ALL)
                 .map { sensor -> "${sensor.name} (${sensor.vendor})" }
 
             result.put("sensors", JSArray(sensorNames))
